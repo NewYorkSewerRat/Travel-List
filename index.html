@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Ahmad's Travel Vault</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:       #060b14;
+  --bg2:      #0c1220;
+  --bg3:      #111a2e;
+  --bg4:      #182238;
+  --bg5:      #1f2c46;
+  --sky:      #3a9bd5;
+  --sky2:     #5fb8f0;
+  --sand:     #e8c97a;
+  --sand2:    #f5e4b0;
+  --coral:    #f07060;
+  --mint:     #4ecba0;
+  --lavender: #9b7fe8;
+  --rose:     #e87aaa;
+  --text:     #eef2f8;
+  --text2:    #7a8aaa;
+  --text3:    #2e3a52;
+  --radius:   12px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-weight: 300;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* STAR FIELD BG */
+.stars {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse at 15% 20%, rgba(58,155,213,0.12) 0%, transparent 45%),
+    radial-gradient(ellipse at 85% 80%, rgba(78,203,160,0.08) 0%, transparent 40%),
+    radial-gradient(ellipse at 50% 50%, rgba(155,127,232,0.05) 0%, transparent 60%);
+}
+.star-dots {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image:
+    radial-gradient(1px 1px at 15% 12%, rgba(255,255,255,0.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 32% 28%, rgba(255,255,255,0.3) 0%, transparent 100%),
+    radial-gradient(1px 1px at 55% 8%,  rgba(255,255,255,0.5) 0%, transparent 100%),
+    radial-gradient(1px 1px at 72% 18%, rgba(255,255,255,0.3) 0%, transparent 100%),
+    radial-gradient(1px 1px at 88% 32%, rgba(255,255,255,0.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 10% 45%, rgba(255,255,255,0.2) 0%, transparent 100%),
+    radial-gradient(1px 1px at 65% 55%, rgba(255,255,255,0.3) 0%, transparent 100%),
+    radial-gradient(1px 1px at 42% 70%, rgba(255,255,255,0.2) 0%, transparent 100%),
+    radial-gradient(1px 1px at 90% 65%, rgba(255,255,255,0.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 25% 85%, rgba(255,255,255,0.3) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 78% 90%, rgba(255,255,255,0.35) 0%, transparent 100%),
+    radial-gradient(1px 1px at 5% 95%,  rgba(255,255,255,0.2) 0%, transparent 100%);
+}
+
+header, .stats-wrap, .tabs-wrap, .main, .modal-overlay { position: relative; z-index: 1; }
+
+/* HEADER */
+header { text-align: center; padding: 56px 20px 28px; }
+.header-eyebrow {
+  font-size: 10px; letter-spacing: 6px; text-transform: uppercase;
+  color: var(--sky2); font-weight: 500; margin-bottom: 14px;
+}
+h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(40px, 8vw, 76px);
+  font-weight: 900; line-height: 0.92; letter-spacing: -2px;
+}
+h1 .l1 { color: var(--sky2); display: block; }
+h1 .l2 { color: var(--sand); display: block; font-style: italic; }
+.header-sub {
+  font-size: 12px; color: var(--text2); margin-top: 16px;
+  letter-spacing: 3px; text-transform: uppercase;
+}
+.header-divider {
+  width: 200px; height: 1px; margin: 20px auto 0;
+  background: linear-gradient(to right, transparent, var(--sky), var(--sand), transparent);
+}
+
+/* WORLD COUNTER */
+.world-counter {
+  display: flex; justify-content: center; gap: 0;
+  max-width: 600px; margin: 0 auto 32px;
+  background: var(--bg2); border: 1px solid var(--bg4);
+  border-radius: var(--radius); overflow: hidden;
+}
+.wc-item {
+  flex: 1; text-align: center; padding: 16px 8px;
+  border-right: 1px solid var(--bg4);
+}
+.wc-item:last-child { border-right: none; }
+.wc-num {
+  display: block;
+  font-family: 'Playfair Display', serif;
+  font-size: 30px; font-weight: 700; line-height: 1;
+}
+.wc-num.c1 { color: var(--sky2); }
+.wc-num.c2 { color: var(--sand); }
+.wc-num.c3 { color: var(--mint); }
+.wc-num.c4 { color: var(--lavender); }
+.wc-num.c5 { color: var(--rose); }
+.wc-lbl {
+  display: block; font-size: 9px; letter-spacing: 2px;
+  text-transform: uppercase; color: var(--text3); margin-top: 4px;
+}
+
+/* TABS */
+.tabs-wrap {
+  display: flex; justify-content: center; gap: 6px;
+  padding: 0 16px; margin-bottom: 28px; flex-wrap: wrap;
+}
+.tab-btn {
+  background: var(--bg2); border: 1px solid var(--bg4);
+  color: var(--text2); font-family: 'Inter', sans-serif;
+  font-size: 12px; font-weight: 500; letter-spacing: 0.5px;
+  padding: 9px 16px; border-radius: 30px; cursor: pointer;
+  transition: all 0.2s; display: flex; align-items: center; gap: 6px;
+}
+.tab-btn:hover { color: var(--text); border-color: var(--bg5); }
+.tab-btn.t-countries.active   { background: rgba(58,155,213,0.12);  border-color: var(--sky);      color: var(--sky2); }
+.tab-btn.t-cities.active      { background: rgba(232,201,122,0.1);  border-color: var(--sand);     color: var(--sand2); }
+.tab-btn.t-landmarks.active   { background: rgba(78,203,160,0.1);   border-color: var(--mint);     color: var(--mint); }
+.tab-btn.t-beaches.active     { background: rgba(240,112,96,0.1);   border-color: var(--coral);    color: var(--coral); }
+.tab-btn.t-hotels.active      { background: rgba(155,127,232,0.1);  border-color: var(--lavender); color: var(--lavender); }
+.tab-btn.t-food.active        { background: rgba(232,122,170,0.1);  border-color: var(--rose);     color: var(--rose); }
+
+/* MAIN */
+.main { max-width: 980px; margin: 0 auto; padding: 0 16px 80px; }
+.section { display: none; }
+.section.active { display: block; }
+
+/* FILTER ROW */
+.filter-row {
+  display: flex; gap: 10px; margin-bottom: 22px;
+  align-items: center; justify-content: space-between; flex-wrap: wrap;
+}
+.filter-pills { display: flex; gap: 5px; flex-wrap: wrap; }
+.pill {
+  padding: 5px 13px; border-radius: 20px; font-size: 11px;
+  letter-spacing: 0.5px; cursor: pointer; border: 1px solid transparent;
+  transition: all 0.18s; font-weight: 400;
+}
+.pill.all       { background: var(--bg3); border-color: var(--bg5); color: var(--text2); }
+.pill.visited   { background: rgba(78,203,160,0.08);  border-color: rgba(78,203,160,0.2);  color: #4ecba0; }
+.pill.want      { background: rgba(58,155,213,0.08);  border-color: rgba(58,155,213,0.2);  color: #5fb8f0; }
+.pill.bucket    { background: rgba(232,201,122,0.08); border-color: rgba(232,201,122,0.2); color: #e8c97a; }
+.pill.planning  { background: rgba(155,127,232,0.08); border-color: rgba(155,127,232,0.2); color: #b09ee8; }
+.pill.again     { background: rgba(240,112,96,0.08);  border-color: rgba(240,112,96,0.2);  color: #f07060; }
+.pill.active-filter, .pill:hover { filter: brightness(1.35); border-color: currentColor; }
+
+.add-btn {
+  background: var(--bg3); border: 1px solid var(--bg5);
+  color: var(--text); font-family: 'Inter', sans-serif;
+  font-size: 12px; font-weight: 500; padding: 8px 18px;
+  border-radius: 8px; cursor: pointer; transition: all 0.2s;
+  display: flex; align-items: center; gap: 6px;
+}
+.add-btn:hover { background: var(--bg4); }
+
+/* GRID */
+.entries-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+/* CARD */
+.entry-card {
+  background: var(--bg2); border: 1px solid var(--bg4);
+  border-radius: var(--radius); padding: 18px;
+  transition: transform 0.2s, border-color 0.2s; position: relative; overflow: hidden;
+}
+.entry-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+}
+.entry-card.visited::before  { background: linear-gradient(to right, transparent, #4ecba0, transparent); }
+.entry-card.want::before     { background: linear-gradient(to right, transparent, #5fb8f0, transparent); }
+.entry-card.bucket::before   { background: linear-gradient(to right, transparent, #e8c97a, transparent); }
+.entry-card.planning::before { background: linear-gradient(to right, transparent, #b09ee8, transparent); }
+.entry-card.again::before    { background: linear-gradient(to right, transparent, #f07060, transparent); }
+.entry-card:hover { transform: translateY(-3px); border-color: var(--bg5); }
+
+.card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 8px; }
+.card-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px; font-weight: 700; color: var(--text);
+  line-height: 1.2; flex: 1;
+}
+.card-country { font-size: 12px; color: var(--text2); font-weight: 300; margin-top: 1px; }
+.card-actions { display: flex; gap: 4px; opacity: 0; transition: opacity 0.2s; }
+.entry-card:hover .card-actions { opacity: 1; }
+.card-act-btn {
+  background: var(--bg3); border: 1px solid var(--bg4);
+  color: var(--text3); width: 28px; height: 28px;
+  border-radius: 6px; cursor: pointer; font-size: 13px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+.card-act-btn:hover { color: var(--text); border-color: var(--bg5); }
+.card-act-btn.del:hover { color: var(--coral); border-color: rgba(240,112,96,0.3); }
+
+.card-meta { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; align-items: center; }
+.status-badge {
+  font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase;
+  padding: 3px 9px; border-radius: 20px; font-weight: 500;
+  display: inline-flex; align-items: center; gap: 4px;
+}
+.status-badge.visited  { background: rgba(78,203,160,0.12);  color: #4ecba0; }
+.status-badge.want     { background: rgba(58,155,213,0.12);  color: #5fb8f0; }
+.status-badge.bucket   { background: rgba(232,201,122,0.12); color: #e8c97a; }
+.status-badge.planning { background: rgba(155,127,232,0.12); color: #b09ee8; }
+.status-badge.again    { background: rgba(240,112,96,0.12);  color: #f07060; }
+.status-dot { width: 4px; height: 4px; border-radius: 50%; background: currentColor; }
+
+.budget-badge {
+  font-size: 11px; color: var(--text2);
+  background: var(--bg3); border: 1px solid var(--bg4);
+  padding: 2px 8px; border-radius: 6px;
+}
+
+.card-detail {
+  font-size: 12px; color: var(--text2); margin-bottom: 6px;
+  display: flex; align-items: flex-start; gap: 6px; line-height: 1.5;
+}
+.card-detail-icon { flex-shrink: 0; font-size: 12px; margin-top: 1px; }
+
+.card-rating { display: flex; gap: 2px; margin-bottom: 8px; }
+.star { font-size: 13px; color: var(--text3); cursor: pointer; transition: color 0.1s; }
+.star.filled { color: var(--sand); }
+.star:hover { color: var(--sand2); }
+
+.card-section-label {
+  font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--text3); margin: 8px 0 3px; font-weight: 500;
+}
+.card-block {
+  font-size: 12px; color: var(--text2); line-height: 1.6;
+  background: var(--bg3); border: 1px solid var(--bg4);
+  border-radius: 8px; padding: 8px 10px; margin-bottom: 6px;
+}
+.card-block:empty { display: none; }
+.card-thoughts {
+  font-size: 13px; color: var(--text2); line-height: 1.6;
+  font-style: italic; border-top: 1px solid var(--bg4);
+  padding-top: 9px; margin-top: 6px;
+}
+.card-thoughts:empty { display: none; }
+
+.todo-list { list-style: none; }
+.todo-item {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 12px; color: var(--text2); padding: 3px 0;
+}
+.todo-item::before {
+  content: ''; width: 5px; height: 5px;
+  border: 1px solid var(--sky2); border-radius: 50%; flex-shrink: 0;
+}
+
+.empty-state {
+  grid-column: 1 / -1; text-align: center; padding: 64px 20px; color: var(--text3);
+}
+.empty-icon { font-size: 40px; margin-bottom: 12px; opacity: 0.35; }
+.empty-state p { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; }
+
+/* MODAL */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.9); backdrop-filter: blur(8px);
+  align-items: center; justify-content: center; padding: 20px;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--bg2); border: 1px solid var(--bg4);
+  border-radius: 16px; padding: 28px 26px;
+  width: 100%; max-width: 500px; max-height: 92vh; overflow-y: auto;
+  animation: modalIn 0.25s cubic-bezier(0.34,1.3,0.64,1) forwards;
+}
+@keyframes modalIn {
+  from { opacity:0; transform:scale(0.88) translateY(24px); }
+  to   { opacity:1; transform:scale(1) translateY(0); }
+}
+.modal-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 22px; font-weight: 700; color: var(--text);
+  margin-bottom: 22px;
+}
+.modal-title span { color: var(--sky2); font-style: italic; }
+
+.form-group { margin-bottom: 14px; }
+.form-label {
+  display: block; font-size: 10px; letter-spacing: 2px;
+  text-transform: uppercase; color: var(--text3);
+  margin-bottom: 6px; font-weight: 500;
+}
+.form-input, .form-select, .form-textarea {
+  width: 100%; background: var(--bg3);
+  border: 1px solid var(--bg4); border-radius: 8px;
+  color: var(--text); font-family: 'Inter', sans-serif;
+  font-size: 14px; padding: 10px 14px;
+  transition: border-color 0.2s; outline: none;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--bg5); }
+.form-select option { background: var(--bg3); }
+.form-textarea { resize: vertical; min-height: 68px; line-height: 1.6; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.section-divider {
+  font-size: 9px; letter-spacing: 3px; text-transform: uppercase;
+  color: var(--text3); margin: 18px 0 12px; font-weight: 500;
+  display: flex; align-items: center; gap: 10px;
+}
+.section-divider::after {
+  content: ''; flex: 1; height: 1px; background: var(--bg4);
+}
+
+.rating-input { display: flex; gap: 6px; }
+.rating-star {
+  font-size: 22px; color: var(--text3); cursor: pointer;
+  transition: color 0.1s; user-select: none;
+}
+.rating-star.filled { color: var(--sand); }
+
+.todo-input-wrap { display: flex; gap: 8px; }
+.todo-input-wrap .form-input { flex: 1; }
+.todo-add-btn {
+  background: var(--bg3); border: 1px solid var(--bg4);
+  color: var(--sky2); width: 40px; border-radius: 8px;
+  cursor: pointer; font-size: 20px; font-weight: 300;
+  transition: all 0.15s; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.todo-add-btn:hover { border-color: var(--sky); }
+.todo-items-list { margin-top: 8px; }
+.todo-form-item {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 13px; color: var(--text2); padding: 5px 0;
+  border-bottom: 1px solid var(--bg4);
+}
+.todo-form-item:last-child { border-bottom: none; }
+.todo-remove {
+  background: none; border: none; color: var(--text3);
+  cursor: pointer; font-size: 14px; padding: 2px 4px;
+  transition: color 0.15s;
+}
+.todo-remove:hover { color: var(--coral); }
+
+.modal-actions { display: flex; gap: 10px; margin-top: 22px; }
+.btn-save {
+  flex: 1; background: var(--sky); border: none; color: #fff;
+  font-family: 'Inter', sans-serif; font-size: 13px;
+  font-weight: 500; padding: 12px; border-radius: 8px;
+  cursor: pointer; transition: all 0.2s; letter-spacing: 0.5px;
+}
+.btn-save:hover { background: var(--sky2); }
+.btn-cancel {
+  background: var(--bg3); border: 1px solid var(--bg4);
+  color: var(--text2); font-family: 'Inter', sans-serif;
+  font-size: 13px; padding: 12px 20px; border-radius: 8px;
+  cursor: pointer; transition: all 0.2s;
+}
+.btn-cancel:hover { border-color: var(--bg5); color: var(--text); }
+
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--bg5); }
+</style>
+</head>
+<body>
+
+<div class="stars"></div>
+<div class="star-dots"></div>
+
+<header>
+  <p class="header-eyebrow">Ahmad's Travel Journal</p>
+  <h1>
+    <span class="l1">Wander</span>
+    <span class="l2">& Explore</span>
+  </h1>
+  <p class="header-sub">Countries · Cities · Landmarks · Beaches · Hotels · Food</p>
+  <div class="header-divider"></div>
+</header>
+
+<div class="world-counter" style="padding:0 16px; max-width:660px; margin:0 auto 32px;">
+  <div class="wc-item"><span class="wc-num c1" id="st-total">0</span><span class="wc-lbl">Total</span></div>
+  <div class="wc-item"><span class="wc-num c2" id="st-visited">0</span><span class="wc-lbl">Visited</span></div>
+  <div class="wc-item"><span class="wc-num c3" id="st-want">0</span><span class="wc-lbl">Want to Go</span></div>
+  <div class="wc-item"><span class="wc-num c4" id="st-planning">0</span><span class="wc-lbl">Planning</span></div>
+  <div class="wc-item"><span class="wc-num c5" id="st-bucket">0</span><span class="wc-lbl">Bucket List</span></div>
+</div>
+
+<div class="tabs-wrap">
+  <button class="tab-btn t-countries active" onclick="switchTab('countries',this)"><span>🌍</span> Countries</button>
+  <button class="tab-btn t-cities"           onclick="switchTab('cities',this)"><span>🏙️</span> Cities</button>
+  <button class="tab-btn t-landmarks"        onclick="switchTab('landmarks',this)"><span>🗺️</span> Landmarks</button>
+  <button class="tab-btn t-beaches"          onclick="switchTab('beaches',this)"><span>🏖️</span> Beaches</button>
+  <button class="tab-btn t-hotels"           onclick="switchTab('hotels',this)"><span>🏨</span> Hotels</button>
+  <button class="tab-btn t-food"             onclick="switchTab('food',this)"><span>🍜</span> Food Spots</button>
+</div>
+
+<div class="main">
+  <div id="sec-countries" class="section active"></div>
+  <div id="sec-cities"    class="section"></div>
+  <div id="sec-landmarks" class="section"></div>
+  <div id="sec-beaches"   class="section"></div>
+  <div id="sec-hotels"    class="section"></div>
+  <div id="sec-food"      class="section"></div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <p class="modal-title">Add <span id="modal-cat-label">Entry</span></p>
+    <input type="hidden" id="edit-id"/>
+    <input type="hidden" id="edit-cat"/>
+
+    <div class="form-group">
+      <label class="form-label">Name</label>
+      <input class="form-input" id="f-title" type="text" placeholder="e.g. Japan, Tokyo, Eiffel Tower..."/>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Status</label>
+        <select class="form-select" id="f-status">
+          <option value="visited">Visited</option>
+          <option value="want">Want to Visit</option>
+          <option value="bucket">Bucket List</option>
+          <option value="planning">Currently Planning</option>
+          <option value="again">To Go Again</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Budget / Cost</label>
+        <select class="form-select" id="f-budget">
+          <option value="">— Select —</option>
+          <option value="Budget">Budget</option>
+          <option value="Mid-range">Mid-range</option>
+          <option value="Pricey">Pricey</option>
+          <option value="Luxury">Luxury</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Date / Year</label>
+        <input class="form-input" id="f-date" type="text" placeholder="e.g. March 2024"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Who I Went With</label>
+        <input class="form-input" id="f-who" type="text" placeholder="e.g. Fahimah, solo..."/>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Rating</label>
+      <div class="rating-input" id="rating-input">
+        <span class="rating-star" data-v="1">★</span>
+        <span class="rating-star" data-v="2">★</span>
+        <span class="rating-star" data-v="3">★</span>
+        <span class="rating-star" data-v="4">★</span>
+        <span class="rating-star" data-v="5">★</span>
+      </div>
+    </div>
+
+    <div class="section-divider">Notes & Memories</div>
+
+    <div class="form-group">
+      <label class="form-label">Thoughts / Review</label>
+      <textarea class="form-textarea" id="f-thoughts" placeholder="How was it? What was memorable?"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Photos / Memory Note</label>
+      <textarea class="form-textarea" id="f-memories" placeholder="A memory, a moment, something to remember..."></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Tips & Recommendations</label>
+      <textarea class="form-textarea" id="f-tips" placeholder="Best time to go, must-try spots, things to know..."></textarea>
+    </div>
+
+    <div class="section-divider">Still To Do</div>
+    <div class="form-group">
+      <label class="form-label">Add items</label>
+      <div class="todo-input-wrap">
+        <input class="form-input" id="f-todo-input" type="text" placeholder="e.g. Visit the old medina..."/>
+        <button class="todo-add-btn" onclick="addTodoItem()">+</button>
+      </div>
+      <div class="todo-items-list" id="todo-items-list"></div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-save" onclick="saveEntry()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var data = { countries:[], cities:[], landmarks:[], beaches:[], hotels:[], food:[] };
+var currentTab = 'countries';
+var currentFilter = { countries:'all', cities:'all', landmarks:'all', beaches:'all', hotels:'all', food:'all' };
+var editRating = 0;
+var editingId = null;
+var todoItems = [];
+
+var statusLabels = { visited:'Visited', want:'Want to Visit', bucket:'Bucket List', planning:'Planning', again:'To Go Again' };
+var tabLabels = { countries:'Country', cities:'City', landmarks:'Landmark', beaches:'Beach / Nature', hotels:'Hotel / Stay', food:'Food Spot' };
+var tabIcons  = { countries:'🌍', cities:'🏙️', landmarks:'🗺️', beaches:'🏖️', hotels:'🏨', food:'🍜' };
+
+function load() {
+  try { var s = localStorage.getItem('ahmads-travel'); if (s) data = JSON.parse(s); } catch(e) {}
+}
+function save() {
+  try { localStorage.setItem('ahmads-travel', JSON.stringify(data)); } catch(e) {}
+}
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
+
+function switchTab(cat, btn) {
+  currentTab = cat;
+  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  document.querySelectorAll('.section').forEach(function(s){ s.classList.remove('active'); });
+  document.getElementById('sec-'+cat).classList.add('active');
+  renderSection(cat);
+}
+
+function setFilter(cat, status, el) {
+  currentFilter[cat] = status;
+  el.closest('.filter-pills').querySelectorAll('.pill').forEach(function(p){ p.classList.remove('active-filter'); });
+  el.classList.add('active-filter');
+  renderSection(cat);
+}
+
+function renderSection(cat) {
+  var sec = document.getElementById('sec-'+cat);
+  var filter = currentFilter[cat];
+  var entries = data[cat];
+  var filtered = filter === 'all' ? entries : entries.filter(function(e){ return e.status === filter; });
+
+  var statuses = [
+    {k:'all',     l:'All'},
+    {k:'visited', l:'Visited'},
+    {k:'want',    l:'Want to Go'},
+    {k:'bucket',  l:'Bucket List'},
+    {k:'planning',l:'Planning'},
+    {k:'again',   l:'To Go Again'}
+  ];
+
+  var html = '<div class="filter-row"><div class="filter-pills">';
+  statuses.forEach(function(s){
+    var cls = 'pill ' + (s.k==='all'?'all':s.k) + (currentFilter[cat]===s.k?' active-filter':'');
+    html += '<span class="'+cls+'" onclick="setFilter(\''+cat+'\',\''+s.k+'\',this)">'+s.l+'</span>';
+  });
+  html += '</div><button class="add-btn" onclick="openModal(\''+cat+'\',null)">+ Add</button></div>';
+  html += '<div class="entries-grid">';
+
+  if (!filtered.length) {
+    html += '<div class="empty-state"><div class="empty-icon">'+tabIcons[cat]+'</div><p>No '+tabLabels[cat].toLowerCase()+'s logged yet</p></div>';
+  } else {
+    filtered.forEach(function(e){ html += renderCard(e, cat); });
+  }
+  html += '</div>';
+  sec.innerHTML = html;
+  updateStats();
+}
+
+function renderCard(e, cat) {
+  var stars = '';
+  for (var i=1;i<=5;i++) stars += '<span class="star'+(i<=e.rating?' filled':'')+'" onclick="quickRate(\''+cat+'\',\''+e.id+'\','+i+')">★</span>';
+
+  var html = '<div class="entry-card '+e.status+'">';
+  html += '<div class="card-top"><div><div class="card-title">'+esc(e.title)+'</div>';
+  if (e.date||e.who) html += '<div class="card-country">'+(e.date?esc(e.date):'')+(e.date&&e.who?' · ':'')+( e.who?esc(e.who):'' )+'</div>';
+  html += '</div><div class="card-actions">';
+  html += '<button class="card-act-btn" onclick="openModal(\''+cat+'\',\''+e.id+'\')">✎</button>';
+  html += '<button class="card-act-btn del" onclick="deleteEntry(\''+cat+'\',\''+e.id+'\')">✕</button>';
+  html += '</div></div>';
+
+  html += '<div class="card-meta">';
+  html += '<span class="status-badge '+e.status+'"><span class="status-dot"></span>'+statusLabels[e.status]+'</span>';
+  if (e.budget) html += '<span class="budget-badge">'+esc(e.budget)+'</span>';
+  html += '</div>';
+
+  html += '<div class="card-rating">'+stars+'</div>';
+
+  if (e.thoughts) html += '<div class="card-thoughts">'+esc(e.thoughts)+'</div>';
+
+  if (e.memories) {
+    html += '<div class="card-section-label">Memory</div>';
+    html += '<div class="card-block">'+esc(e.memories)+'</div>';
+  }
+  if (e.tips) {
+    html += '<div class="card-section-label">Tips</div>';
+    html += '<div class="card-block">'+esc(e.tips)+'</div>';
+  }
+  if (e.todos && e.todos.length) {
+    html += '<div class="card-section-label">Still To Do</div><ul class="todo-list">';
+    e.todos.forEach(function(t){ html += '<li class="todo-item">'+esc(t)+'</li>'; });
+    html += '</ul>';
+  }
+  html += '</div>';
+  return html;
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function addTodoItem() {
+  var inp = document.getElementById('f-todo-input');
+  var val = inp.value.trim();
+  if (!val) return;
+  todoItems.push(val);
+  inp.value = '';
+  renderTodoList();
+}
+
+document.getElementById('f-todo-input').addEventListener('keydown', function(e){
+  if (e.key === 'Enter') { e.preventDefault(); addTodoItem(); }
+});
+
+function removeTodoItem(idx) {
+  todoItems.splice(idx, 1);
+  renderTodoList();
+}
+
+function renderTodoList() {
+  var list = document.getElementById('todo-items-list');
+  if (!todoItems.length) { list.innerHTML = ''; return; }
+  var html = '';
+  todoItems.forEach(function(t, i){
+    html += '<div class="todo-form-item"><span>'+esc(t)+'</span><button class="todo-remove" onclick="removeTodoItem('+i+')">✕</button></div>';
+  });
+  list.innerHTML = html;
+}
+
+function openModal(cat, id) {
+  editingId = id;
+  todoItems = [];
+  document.getElementById('edit-cat').value = cat;
+  document.getElementById('modal-cat-label').textContent = tabLabels[cat];
+
+  if (id) {
+    var e = data[cat].find(function(x){ return x.id===id; });
+    document.getElementById('f-title').value    = e.title;
+    document.getElementById('f-status').value   = e.status;
+    document.getElementById('f-budget').value   = e.budget || '';
+    document.getElementById('f-date').value     = e.date || '';
+    document.getElementById('f-who').value      = e.who || '';
+    document.getElementById('f-thoughts').value = e.thoughts || '';
+    document.getElementById('f-memories').value = e.memories || '';
+    document.getElementById('f-tips').value     = e.tips || '';
+    editRating = e.rating || 0;
+    todoItems = e.todos ? e.todos.slice() : [];
+  } else {
+    ['f-title','f-date','f-who','f-thoughts','f-memories','f-tips'].forEach(function(id){
+      document.getElementById(id).value = '';
+    });
+    document.getElementById('f-status').value = 'visited';
+    document.getElementById('f-budget').value = '';
+    editRating = 0;
+    todoItems = [];
+  }
+
+  updateRatingStars(editRating);
+  renderTodoList();
+  document.getElementById('modal-overlay').classList.add('open');
+  setTimeout(function(){ document.getElementById('f-title').focus(); }, 100);
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+  editingId = null; todoItems = [];
+}
+
+document.getElementById('modal-overlay').addEventListener('click', function(e){
+  if (e.target === this) closeModal();
+});
+
+document.querySelectorAll('.rating-star').forEach(function(star){
+  star.addEventListener('click', function(){
+    editRating = parseInt(this.getAttribute('data-v'));
+    updateRatingStars(editRating);
+  });
+  star.addEventListener('mouseover', function(){
+    updateRatingStars(parseInt(this.getAttribute('data-v')));
+  });
+});
+document.getElementById('rating-input').addEventListener('mouseleave', function(){
+  updateRatingStars(editRating);
+});
+
+function updateRatingStars(val) {
+  document.querySelectorAll('.rating-star').forEach(function(s){
+    s.classList.toggle('filled', parseInt(s.getAttribute('data-v')) <= val);
+  });
+}
+
+function saveEntry() {
+  var cat = document.getElementById('edit-cat').value;
+  var title = document.getElementById('f-title').value.trim();
+  if (!title) { document.getElementById('f-title').focus(); return; }
+  var entry = {
+    id:       editingId || uid(),
+    title:    title,
+    status:   document.getElementById('f-status').value,
+    budget:   document.getElementById('f-budget').value,
+    date:     document.getElementById('f-date').value.trim(),
+    who:      document.getElementById('f-who').value.trim(),
+    rating:   editRating,
+    thoughts: document.getElementById('f-thoughts').value.trim(),
+    memories: document.getElementById('f-memories').value.trim(),
+    tips:     document.getElementById('f-tips').value.trim(),
+    todos:    todoItems.slice()
+  };
+  if (editingId) {
+    var idx = data[cat].findIndex(function(e){ return e.id===editingId; });
+    if (idx > -1) data[cat][idx] = entry;
+  } else {
+    data[cat].unshift(entry);
+  }
+  save(); closeModal(); renderSection(cat);
+}
+
+function deleteEntry(cat, id) {
+  data[cat] = data[cat].filter(function(e){ return e.id!==id; });
+  save(); renderSection(cat);
+}
+
+function quickRate(cat, id, r) {
+  var e = data[cat].find(function(x){ return x.id===id; });
+  if (e) { e.rating = r; save(); renderSection(cat); }
+}
+
+function updateStats() {
+  var all = [].concat(data.countries, data.cities, data.landmarks, data.beaches, data.hotels, data.food);
+  document.getElementById('st-total').textContent   = all.length;
+  document.getElementById('st-visited').textContent = all.filter(function(e){ return e.status==='visited'||e.status==='again'; }).length;
+  document.getElementById('st-want').textContent    = all.filter(function(e){ return e.status==='want'; }).length;
+  document.getElementById('st-planning').textContent= all.filter(function(e){ return e.status==='planning'; }).length;
+  document.getElementById('st-bucket').textContent  = all.filter(function(e){ return e.status==='bucket'; }).length;
+}
+
+load();
+renderSection('countries');
+</script>
+</body>
+</html>
