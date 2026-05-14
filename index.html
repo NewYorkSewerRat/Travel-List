@@ -813,14 +813,14 @@ document.getElementById('modal-overlay').addEventListener('click',function(e){if
 async function uploadPhotoToStorage(file,entryId){
   var ext=file.name.split('.').pop()||'jpg';
   var path='travel/'+entryId+'/'+uid()+'.'+ext;
-  var res=await fetch(SB_URL+'/storage/v1/object/photos/'+path,{method:'POST',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':file.type},body:file});
+  var res=await fetch(SB_URL+'/storage/v1/object/Photos/'+path,{method:'POST',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':file.type},body:file});
   if(!res.ok)throw new Error('Upload failed');
-  return SB_URL+'/storage/v1/object/public/photos/'+path;
+  return SB_URL+'/storage/v1/object/public/Photos/'+path;
 }
 async function deletePhotoFromStorage(url){
   var path=url.split('/object/public/photos/')[1];
   if(!path)return;
-  try{await fetch(SB_URL+'/storage/v1/object/photos/'+path,{method:'DELETE',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}});}catch(e){}
+  try{await fetch(SB_URL+'/storage/v1/object/Photos/'+path,{method:'DELETE',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}});}catch(e){}
 }
 async function handlePhotoUpload(event){
   var files=Array.from(event.target.files);
