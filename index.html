@@ -407,6 +407,15 @@ h1 .l2 { color: var(--sand); display: block; font-style: italic; }
 ::-webkit-scrollbar-track { background: var(--bg); }
 ::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--bg5); }
+.backup-bar{max-width:980px;margin:0 auto;padding:10px 16px 0;display:flex;justify-content:space-between;align-items:center;gap:8px;position:relative;z-index:1;}
+.backup-btn{background:var(--bg2);border:1px solid var(--bg4);color:var(--text2);font-family:'Inter',sans-serif;font-size:11px;padding:6px 14px;border-radius:20px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:5px;}
+.backup-btn:hover{border-color:var(--sky2);color:var(--sky2);}
+.sync-status{font-size:11px;color:var(--text2);display:flex;align-items:center;gap:6px;}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--text3);}
+.sync-dot.ok{background:var(--mint);}
+.sync-dot.err{background:var(--coral);}
+.sync-dot.loading{background:var(--sand);animation:pulse .8s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 </style>
 </head>
 <body>
@@ -423,6 +432,16 @@ h1 .l2 { color: var(--sand); display: block; font-style: italic; }
   <p class="header-sub">Countries · Cities · Landmarks · Beaches · Hotels · Food</p>
   <div class="header-divider"></div>
 </header>
+
+<div class="backup-bar">
+  <div class="sync-status"><div class="sync-dot loading" id="sync-dot"></div><span id="sync-label">Connecting...</span></div>
+  <div style="display:flex;gap:8px;">
+    <button class="backup-btn" onclick="exportData()">⬇ Export</button>
+    <button class="backup-btn" onclick="document.getElementById('import-input').click()">⬆ Import</button>
+    <input type="file" id="import-input" accept=".json" style="display:none" onchange="importData(event)"/>
+  </div>
+</div>
+</div>
 
 <div class="world-counter" style="padding:0 16px; max-width:660px; margin:0 auto 32px;">
   <div class="wc-item"><span class="wc-num c1" id="st-total">0</span><span class="wc-lbl">Total</span></div>
@@ -573,13 +592,46 @@ var statusLabels = { visited:'Visited', want:'Want to Visit', bucket:'Bucket Lis
 var tabLabels = { countries:'Country', cities:'City', landmarks:'Landmark', beaches:'Beach / Nature', hotels:'Hotel / Stay', food:'Food Spot' };
 var tabIcons  = { countries:'🌍', cities:'🏙️', landmarks:'🗺️', beaches:'🏖️', hotels:'🏨', food:'🍜' };
 
-function load() {
-  try { var s = localStorage.getItem('ahmads-travel'); if (s) data = JSON.parse(s); } catch(e) {}
+var SB_URL='https://oludgjpyrennjfkizmas.supabase.co';
+var SB_KEY='sb_publishable_iPOfDAFeSbuFD95Ibnr05w_U9fQHHvJ';
+function sbFetch(path,opts){
+  return fetch(SB_URL+path,Object.assign({headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=representation'}},opts));
 }
-function save() {
-  try { localStorage.setItem('ahmads-travel', JSON.stringify(data)); } catch(e) {}
+
+function saveLocal(){try{localStorage.setItem('ahmads-travel',JSON.stringify(data));}catch(e){}}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2);}
+
+function setSyncStatus(state,msg){
+  var dot=document.getElementById('sync-dot');
+  var lbl=document.getElementById('sync-label');
+  if(!dot||!lbl)return;
+  dot.className='sync-dot '+state;
+  lbl.textContent=msg;
 }
-function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
+
+async function load(){
+  setSyncStatus('loading','Connecting...');
+  try{
+    var res=await sbFetch('/rest/v1/travel?select=*&order=created_at.desc');
+    if(!res.ok)throw new Error();
+    var rows=await res.json();
+    data={countries:[],cities:[],landmarks:[],beaches:[],hotels:[],food:[]};
+    rows.forEach(function(r){
+      if(data[r.cat]!==undefined) data[r.cat].push({
+        id:r.id,title:r.title,status:r.status,budget:r.budget||'',
+        date:r.date_visited||'',who:r.who_with||'',rating:r.rating||0,
+        thoughts:r.thoughts||'',memories:r.memories||'',tips:r.tips||'',
+        todos:r.todos?JSON.parse(r.todos):[],
+        photos:r.photos?JSON.parse(r.photos):[]
+      });
+    });
+    saveLocal();
+    setSyncStatus('ok','Synced');
+  }catch(e){
+    setSyncStatus('err','Offline — local data');
+    try{var s=localStorage.getItem('ahmads-travel');if(s)data=JSON.parse(s);}catch(ex){}
+  }
+}
 
 function switchTab(cat, btn) {
   currentTab = cat;
@@ -673,13 +725,34 @@ function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-function handlePhotoUpload(event){
-  var files=Array.from(event.target.files);
-  files.forEach(function(file){
-    var reader=new FileReader();
-    reader.onload=function(e){ modalPhotos.push(e.target.result); renderModalPreviews(); };
-    reader.readAsDataURL(file);
+// ---- SUPABASE STORAGE PHOTO HANDLING ----
+async function uploadPhotoToStorage(file, entryId){
+  var ext=file.name.split('.').pop()||'jpg';
+  var path='travel/'+entryId+'/'+uid()+'.'+ext;
+  var res=await fetch(SB_URL+'/storage/v1/object/photos/'+path,{
+    method:'POST',
+    headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':file.type},
+    body:file
   });
+  if(!res.ok) throw new Error('Upload failed');
+  return SB_URL+'/storage/v1/object/public/photos/'+path;
+}
+async function deletePhotoFromStorage(url){
+  var path=url.split('/object/public/photos/')[1];
+  if(!path)return;
+  try{await fetch(SB_URL+'/storage/v1/object/photos/'+path,{method:'DELETE',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}});}catch(e){}
+}
+
+async function handlePhotoUpload(event){
+  var files=Array.from(event.target.files);
+  var tempId=editingId||('temp-'+uid());
+  for(var i=0;i<files.length;i++){
+    try{
+      var url=await uploadPhotoToStorage(files[i],tempId);
+      modalPhotos.push(url);
+      renderModalPreviews();
+    }catch(e){alert('Photo upload failed — check your connection');}
+  }
   event.target.value='';
 }
 function renderModalPreviews(){
@@ -694,17 +767,19 @@ function renderModalPreviews(){
   });
 }
 function triggerCardPhotoAdd(cat,id){ var inp=document.getElementById('cpi-'+id); if(inp)inp.click(); }
-function handleCardPhotoAdd(event,cat,id){
+async function handleCardPhotoAdd(event,cat,id){
   var files=Array.from(event.target.files);
   var entry=data[cat].find(function(e){return e.id===id;});
   if(!entry)return;
   if(!entry.photos)entry.photos=[];
-  var toLoad=files.length;
-  files.forEach(function(file){
-    var reader=new FileReader();
-    reader.onload=function(e){ entry.photos.push(e.target.result); toLoad--; if(toLoad===0){save();renderSection(cat);} };
-    reader.readAsDataURL(file);
-  });
+  for(var i=0;i<files.length;i++){
+    try{
+      var url=await uploadPhotoToStorage(files[i],id);
+      entry.photos.push(url);
+      try{await sbFetch('/rest/v1/travel?id=eq.'+id,{method:'PATCH',body:JSON.stringify({photos:JSON.stringify(entry.photos)})});}catch(ex){}
+      saveLocal(); renderSection(cat);
+    }catch(e){alert('Photo upload failed');}
+  }
   event.target.value='';
 }
 function openLightbox(cat,id,idx){
@@ -718,10 +793,15 @@ function showLbPhoto(){
   document.getElementById('lb-counter').textContent=(lbIndex+1)+' / '+lbPhotos.length;
 }
 function lbNav(dir){ lbIndex=(lbIndex+dir+lbPhotos.length)%lbPhotos.length; showLbPhoto(); }
-function lbDelete(){
+async function lbDelete(){
   if(!confirm('Delete this photo?'))return;
   var entry=data[lbCat].find(function(e){return e.id===lbEntryId;});
-  if(entry){ entry.photos.splice(lbIndex,1); save();
+  if(entry){
+    var url=entry.photos[lbIndex];
+    entry.photos.splice(lbIndex,1);
+    await deletePhotoFromStorage(url);
+    try{await sbFetch('/rest/v1/travel?id=eq.'+lbEntryId,{method:'PATCH',body:JSON.stringify({photos:JSON.stringify(entry.photos)})});}catch(ex){}
+    saveLocal();
     if(!entry.photos.length){closeLightbox();renderSection(lbCat);return;}
     lbPhotos=entry.photos; lbIndex=Math.min(lbIndex,lbPhotos.length-1); showLbPhoto(); renderSection(lbCat);
   }
@@ -833,41 +913,50 @@ function updateRatingStars(val) {
   });
 }
 
-function saveEntry() {
+async function saveEntry() {
   var cat = document.getElementById('edit-cat').value;
   var title = document.getElementById('f-title').value.trim();
   if (!title) { document.getElementById('f-title').focus(); return; }
   var entry = {
-    id:       editingId || uid(),
-    title:    title,
-    status:   document.getElementById('f-status').value,
-    budget:   document.getElementById('f-budget').value,
-    date:     document.getElementById('f-date').value.trim(),
-    who:      document.getElementById('f-who').value.trim(),
-    rating:   editRating,
+    id: editingId || uid(), title: title,
+    status: document.getElementById('f-status').value,
+    budget: document.getElementById('f-budget').value,
+    date: document.getElementById('f-date').value.trim(),
+    who: document.getElementById('f-who').value.trim(),
+    rating: editRating,
     thoughts: document.getElementById('f-thoughts').value.trim(),
     memories: document.getElementById('f-memories').value.trim(),
-    tips:     document.getElementById('f-tips').value.trim(),
-    todos:    todoItems.slice(),
-    photos:   modalPhotos.slice()
+    tips: document.getElementById('f-tips').value.trim(),
+    todos: todoItems.slice(), photos: modalPhotos.slice()
   };
-  if (editingId) {
-    var idx = data[cat].findIndex(function(e){ return e.id===editingId; });
-    if (idx > -1) data[cat][idx] = entry;
-  } else {
-    data[cat].unshift(entry);
+  var sbRow={id:entry.id,cat:cat,title:entry.title,status:entry.status,budget:entry.budget,date_visited:entry.date,who_with:entry.who,rating:entry.rating,thoughts:entry.thoughts,memories:entry.memories,tips:entry.tips,todos:JSON.stringify(entry.todos),photos:JSON.stringify(entry.photos)};
+  try{
+    if(editingId){
+      await sbFetch('/rest/v1/travel?id=eq.'+editingId,{method:'PATCH',body:JSON.stringify(sbRow)});
+      var idx=data[cat].findIndex(function(e){return e.id===editingId;});
+      if(idx>-1)data[cat][idx]=entry;
+    }else{
+      await sbFetch('/rest/v1/travel',{method:'POST',body:JSON.stringify(sbRow)});
+      data[cat].unshift(entry);
+    }
+  }catch(e){
+    if(editingId){var idx=data[cat].findIndex(function(x){return x.id===editingId;});if(idx>-1)data[cat][idx]=entry;}
+    else data[cat].unshift(entry);
   }
-  save(); closeModal(); renderSection(cat);
+  saveLocal(); closeModal(); renderSection(cat);
 }
 
-function deleteEntry(cat, id) {
+async function deleteEntry(cat, id) {
   data[cat] = data[cat].filter(function(e){ return e.id!==id; });
-  save(); renderSection(cat);
+  saveLocal(); renderSection(cat);
+  try{await sbFetch('/rest/v1/travel?id=eq.'+id,{method:'DELETE'});}catch(e){}
 }
 
-function quickRate(cat, id, r) {
+async function quickRate(cat, id, r) {
   var e = data[cat].find(function(x){ return x.id===id; });
-  if (e) { e.rating = r; save(); renderSection(cat); }
+  if(!e)return;
+  e.rating=r; saveLocal(); renderSection(cat);
+  try{await sbFetch('/rest/v1/travel?id=eq.'+id,{method:'PATCH',body:JSON.stringify({rating:r})});}catch(ex){}
 }
 
 function updateStats() {
@@ -879,8 +968,38 @@ function updateStats() {
   document.getElementById('st-bucket').textContent  = all.filter(function(e){ return e.status==='bucket'; }).length;
 }
 
-load();
-renderSection('countries');
+function exportData(){
+  var exp=JSON.parse(JSON.stringify(data));
+  ['countries','cities','landmarks','beaches','hotels','food'].forEach(function(c){exp[c].forEach(function(e){e.photos=[];});});
+  var blob=new Blob([JSON.stringify(exp,null,2)],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='ahmads-travel-backup-'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();URL.revokeObjectURL(a.href);
+}
+async function importData(event){
+  var file=event.target.files[0];if(!file)return;
+  var reader=new FileReader();
+  reader.onload=async function(e){
+    try{
+      var imported=JSON.parse(e.target.result);
+      if(imported.countries!==undefined){
+        var cats=['countries','cities','landmarks','beaches','hotels','food'];
+        for(var c=0;c<cats.length;c++){
+          var cat=cats[c];
+          for(var i=0;i<(imported[cat]||[]).length;i++){
+            var item=imported[cat][i];
+            try{await sbFetch('/rest/v1/travel',{method:'POST',body:JSON.stringify({id:item.id,cat:cat,title:item.title,status:item.status,budget:item.budget||'',date_visited:item.date||'',who_with:item.who||'',rating:item.rating||0,thoughts:item.thoughts||'',memories:item.memories||'',tips:item.tips||'',todos:JSON.stringify(item.todos||[])})});}catch(ex){}
+          }
+        }
+        await load();renderSection(currentTab);
+        alert('Data restored!');
+      }
+    }catch(err){alert('Could not read file');}
+  };
+  reader.readAsText(file);event.target.value='';
+}
+
+load().then(function(){ renderSection('countries'); });
 </script>
 </body>
 </html>
