@@ -105,8 +105,8 @@ h1 .l1{color:var(--sky2);display:block;}h1 .l2{color:var(--sand);display:block;f
 .card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px;}
 .card-title{font-family:'Playfair Display',serif;font-size:17px;font-weight:700;color:var(--text);line-height:1.2;flex:1;}
 .card-sub{font-size:11px;color:var(--text2);margin-bottom:8px;}
-.card-actions{display:flex;gap:4px;opacity:0;transition:opacity .2s;}
-.entry-card:hover .card-actions{opacity:1;}
+.card-actions{display:flex;gap:4px;transition:opacity .2s;}
+
 .card-act-btn{background:var(--bg3);border:1px solid var(--bg4);color:var(--text3);width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;transition:all .15s;}
 .card-act-btn:hover{color:var(--text);border-color:var(--bg5);}
 .card-act-btn.del:hover{color:var(--coral);border-color:rgba(240,112,96,.3);}
@@ -769,11 +769,11 @@ async function saveEntry(cat){
   setSyncStatus('loading','Saving...');
   try{
     if(editingId){
-      await sbFetch('/rest/v1/travel?id=eq.'+editingId,{method:'PATCH',body:JSON.stringify(sbRow)});
+      sbFetch('/rest/v1/travel?id=eq.'+editingId,{method:'PATCH',body:JSON.stringify(sbRow)});
       var idx=data[cat].findIndex(function(e){return e.id===editingId;});
       if(idx>-1)data[cat][idx]=entry;
     }else{
-      await sbFetch('/rest/v1/travel',{method:'POST',body:JSON.stringify(sbRow)});
+      sbFetch('/rest/v1/travel',{method:'POST',body:JSON.stringify(sbRow)});
       data[cat].unshift(entry);
     }
     setSyncStatus('ok','Saved ✓');
@@ -791,19 +791,19 @@ async function toggleCheck(cat,id,key,el){
   if(!entry.extra)entry.extra={};
   entry.extra[key]=el.checked;
   saveLocal();
-  try{await sbFetch('/rest/v1/travel?id=eq.'+id,{method:'PATCH',body:JSON.stringify({extra:JSON.stringify(entry.extra)})});}catch(e){}
+  sbFetch('/rest/v1/travel?id=eq.'+id,{method:'PATCH',body:JSON.stringify({extra:JSON.stringify(entry.extra)})}).catch(function(){});
 }
 
 async function deleteEntry(cat,id){
   data[cat]=data[cat].filter(function(e){return e.id!==id;});
   saveLocal();renderSection(cat);
-  try{await sbFetch('/rest/v1/travel?id=eq.'+id,{method:'DELETE'});}catch(e){}
+  sbFetch('/rest/v1/travel?id=eq.'+id,{method:'DELETE'}).catch(function(){});
 }
 
 async function quickRate(cat,id,r){
   var e=data[cat].find(function(x){return x.id===id;});
   if(!e)return; e.rating=r; saveLocal(); renderSection(cat);
-  try{await sbFetch('/rest/v1/travel?id=eq.'+id,{method:'PATCH',body:JSON.stringify({rating:r})});}catch(ex){}
+  try{sbFetch('/rest/v1/travel?id=eq.'+id,{method:'PATCH',body:JSON.stringify({rating:r})}).catch(function(){});}catch(ex){}
 }
 
 function closeModal(){document.getElementById('modal-overlay').classList.remove('open');editingId=null;modalPhotos=[];listFields={};}
@@ -849,7 +849,7 @@ async function handleCardPhotoAdd(event,cat,id){
   if(!entry)return; if(!entry.photos)entry.photos=[];
   for(var i=0;i<files.length;i++){
     try{var url=await uploadPhotoToStorage(files[i],id);entry.photos.push(url);
-      try{await sbFetch('/rest/v1/travel?id=eq.'+id,{method:'PATCH',body:JSON.stringify({photos:JSON.stringify(entry.photos)})});}catch(ex){}
+      sbFetch('/rest/v1/travel?id=eq.'+id,{method:'PATCH',body:JSON.stringify({photos:JSON.stringify(entry.photos)})}).catch(function(){});
       saveLocal();renderSection(cat);
     }catch(e){alert('Upload failed');}
   }
@@ -870,7 +870,7 @@ async function lbDelete(){
   var entry=data[lbCat].find(function(e){return e.id===lbEntryId;});
   if(entry){var url=entry.photos[lbIndex];entry.photos.splice(lbIndex,1);
     await deletePhotoFromStorage(url);
-    try{await sbFetch('/rest/v1/travel?id=eq.'+lbEntryId,{method:'PATCH',body:JSON.stringify({photos:JSON.stringify(entry.photos)})});}catch(ex){}
+    sbFetch('/rest/v1/travel?id=eq.'+lbEntryId,{method:'PATCH',body:JSON.stringify({photos:JSON.stringify(entry.photos)})}).catch(function(){});
     saveLocal();
     if(!entry.photos.length){closeLightbox();renderSection(lbCat);return;}
     lbPhotos=entry.photos;lbIndex=Math.min(lbIndex,lbPhotos.length-1);showLbPhoto();renderSection(lbCat);
@@ -908,7 +908,7 @@ async function importData(event){
         for(var i=0;i<(imported[cats[c]]||[]).length;i++){
           var item=imported[cats[c]][i];
           var sbRow={id:item.id,cat:cats[c],title:item.title,status:item.status,budget:item.budget||'',date_visited:item.date||'',who_with:item.who||'',rating:item.rating||0,thoughts:item.thoughts||'',memories:item.memories||'',tips:item.tips||'',todos:JSON.stringify(item.todos||[]),photos:JSON.stringify(item.photos||[]),extra:JSON.stringify(item.extra||{})};
-          try{await sbFetch('/rest/v1/travel',{method:'POST',body:JSON.stringify(sbRow)});}catch(ex){}
+          sbFetch('/rest/v1/travel',{method:'POST',body:JSON.stringify(sbRow)}).catch(function(){});
         }
       }
       await loadAll();alert('Data restored!');
