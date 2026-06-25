@@ -795,6 +795,7 @@ async function toggleCheck(cat,id,key,el){
 }
 
 async function deleteEntry(cat,id){
+  if(!confirm('Remove this entry? This cannot be undone.'))return;
   data[cat]=data[cat].filter(function(e){return e.id!==id;});
   saveLocal();renderSection(cat);
   sbFetch('/rest/v1/travel?id=eq.'+id,{method:'DELETE'}).catch(function(){});
